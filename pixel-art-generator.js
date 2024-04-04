@@ -3,26 +3,27 @@
 const canvas = document.getElementById("canvasPixelArtGenerator");
 const context = canvas.getContext("2d");
 
-const sliderGridDimensions = document.getElementById("sliderGridDimensions");
+const sliderGridDimensions = document.getElementById("sliderGridDimensions"); //slider used to set the size of the grid
+const fileLoadBackgroundImage = document.getElementById("fileLoadBackgroundImage"); //file input used to load a background image
+
 const buttonToggleGridVisibility = document.getElementById("buttonToggleGridVisibility");
 const buttonSaveCanvasImage = document.getElementById("buttonSaveCanvasImage");
 const buttonClearBackgroundImage = document.getElementById("buttonClearBackgroundImage");
-const fileLoadBackgroundImage = document.getElementById("fileLoadBackgroundImage");
 const buttonGeneratePixelArt = document.getElementById("buttonGeneratePixelArt");
 
 //CLASS DECLARATIONS=============================================================================================================================================================
 
-class Pixel {
+class Pixel { //class used to create individual pixels for the pixel art grid
 
-    color = null;
+    color = null; //all pixels start out with no color
 
     static pixelSettings = {
-        gridDimensions: 10,
+        gridDimensions: 10, //width and height of each pixel
         gridVisible: true,
         backgroundImage: null,
-        drawPixelColors: false,
+        drawPixelColors: false, //draw pixel colors or leave blank
     }
-    static pixelsSet = new Set();
+    static pixelsSet = new Set(); //all pixels are stored in this set
 
     constructor(x, y, width, height) {
         this.x = x;
@@ -32,10 +33,10 @@ class Pixel {
         this.initializePixel();
     };
     
-    static setEnableAllPixelOutlines(booleanValue) {
+    static setEnableAllPixelOutlines(booleanValue) { //enable or disable the outlines of all pixels (i.e the grid)
         this.pixelSettings.gridVisible = booleanValue;
     };
-    static initializeAllPixels() {
+    static initializeAllPixels() { //initializes all pixels in the grid simultaneously
         this.pixelsSet.clear();
         const pixelSize = this.pixelSettings.gridDimensions;
 
@@ -45,39 +46,39 @@ class Pixel {
             };
         };
     };
-    static drawBackgroundImage() {
+    static drawBackgroundImage() { //draws the background image if it exists
         if (this.pixelSettings.backgroundImage) {
             context.drawImage(this.pixelSettings.backgroundImage, 0, 0, canvas.width, canvas.height);
         };
     };
-    static drawAllPixels() {
+    static drawAllPixels() { //draws all pixels in the grid simultaneously
         for (let element of this.pixelsSet) {
             element.draw();
         }
     };
-    static drawWhiteBackground() {
+    static drawWhiteBackground() { //draws the white background behind image (helpful for periods where background image is not set)
         context.fillStyle = "white";
         context.fillRect(0, 0, canvas.width, canvas.height);
     }
-    static drawAllElements() {
+    static drawAllElements() { //draws all elements in order for the canvas to be updated correctly
         context.clearRect(0, 0, canvas.width, canvas.height);
         this.drawWhiteBackground();
         this.drawBackgroundImage();
         this.drawAllPixels();
     };
-    static setDrawPixelColors(booleanValue) {
+    static setDrawPixelColors(booleanValue) { //enable or disable the drawing of the fillColor of pixels (i.e the pixel colors)
         this.pixelSettings.drawPixelColors = booleanValue;
     };
 
-    initializePixel() {
+    initializePixel() { //initializes a single pixel and adds it to the set
         this.constructor.pixelsSet.add(this);
     };
-    draw() {
-        if (this.constructor.pixelSettings.drawPixelColors) {
+    draw() { //draws a single pixel
+        if (this.constructor.pixelSettings.drawPixelColors) { //only draw if drawPixelColors is enabled
             context.fillStyle = this.color;
             context.fillRect(this.x, this.y, this.width, this.height);
         }
-        if (this.constructor.pixelSettings.gridVisible) {
+        if (this.constructor.pixelSettings.gridVisible) { //only draw if grid visibility is enabled
             context.strokeStyle = "black";
             context.lineWidth = 1;
             context.strokeRect(this.x, this.y, this.width, this.height);
@@ -87,112 +88,104 @@ class Pixel {
 
 //FUNCTIONS=============================================================================================================================================================
 
-//RUN APPLICATION FUNCTION=====================================================================================================================================
-
-function runApplication() {
-    Pixel.initializeAllPixels();
-    Pixel.drawAllElements();
-}
-
 //DETERMINE POSSIBLE GRID DIMENSIONS===========================================================================================================================
 
-function determinePossibleGridDimensions() {
+function determinePossibleGridDimensions() { //determines the possible grid dimensions for the grid based on the smallest canvas edge updates slider values to match
     const smallestCanvasEdge = Math.min(canvas.height, canvas.width);
 
-    sliderGridDimensions.max = smallestCanvasEdge / 10;
-    sliderGridDimensions.value = 10;
+    sliderGridDimensions.max = smallestCanvasEdge / 10; //limit slider value to 10% of smallest canvas edge
+    sliderGridDimensions.value = 10; //set the default slider value to 10px
 }
 
 //EVENT HANDLER FUNCTIONS====================================================================================================================================
 
 //DOM EVENT HANDLERS==============================================================================================================================================================
 
-function runApplicationWithInitialSettings() {
-    determinePossibleGridDimensions();
-    runApplication();
+function runApplicationWithInitialSettings() { //runs the application with initial settings after DOM is loaded
+    determinePossibleGridDimensions(); //get possible grid dimensions
     setGridDimensions();
-    setBackGroundImageToBlank();
+    setBackGroundImageToBlank(); //sets background image to blank and updates canvas
 }
 
 //HELPER FUNCTIONS FOR EVENT LISTENERS========================================================================================================================
 
-function setEnableImageGrid(booleanValue) {
+function setEnableImageGrid(booleanValue) { //attached to buttonToggleGridVisibility to toggle grid visibility
     const currentValue = Pixel.pixelSettings.gridVisible;
 
-    if (!booleanValue && currentValue) {
+    if (!booleanValue && currentValue) { //if grid is currently visible, hide it
         toggleGridVisibility();
-    } else if (booleanValue && !currentValue) {
+    } else if (booleanValue && !currentValue) { //if grid is currently hidden, show it
         toggleGridVisibility();
     }
-    Pixel.drawAllElements();
+    Pixel.drawAllElements(); //update canvas to reflect changes in grid visibility
 }
 
-function setBackGroundImageToBlank() {
+function setBackGroundImageToBlank() { //attached to buttonClearBackgroundImage to clear background image
     fileLoadBackgroundImage.value = "";
     Pixel.pixelSettings.backgroundImage = null;
 
-    Pixel.setDrawPixelColors(false);
-    Pixel.drawAllElements();
+    Pixel.setDrawPixelColors(false); //disable drawing of pixel colors and hide existing drawn pixels
+    Pixel.drawAllElements(); //update canvas to reflect changes in background image
     buttonGeneratePixelArt.disabled = true;
     buttonClearBackgroundImage.disabled = true;
 }
 
 //CLICK EVENT FUNCTIONS=======================================================================================================================================
 
-function handleSliderClickEvent() {
-    Pixel.pixelSettings.backgroundImage ? resizeCanvasToImage() : Pixel.drawAllElements();
-    setGridDimensions();
+function handleSliderClickEvent() { //attached to sliderGridDimensions to update image grid dimensions and canvas size
+    Pixel.pixelSettings.backgroundImage ? resizeCanvasToImage() : Pixel.drawAllElements(); //if image is loaded, resize canvas to image (else redraw canvas)
+    setGridDimensions(); //update grid dimensions and reinitialize all pixels to match new grid dimensions
 }
 
 //BUTTON EVENT FUNCTIONS=====================================================================================================================================
 
-function setGridDimensions() {
+function setGridDimensions() { //attached to sliderGridDimensions to update image grid dimensions
     Pixel.pixelSettings.gridDimensions = Number(sliderGridDimensions.value);
-    Pixel.initializeAllPixels();
-    Pixel.setDrawPixelColors(false);
+    Pixel.initializeAllPixels(); //reinitialize all pixels to match new grid dimensions
+    Pixel.setDrawPixelColors(false); //disable drawing of pixel colors and hide existing drawn pixels
 }
 
-function toggleGridVisibility() {
-    Pixel.pixelSettings.gridVisible === true ? Pixel.pixelSettings.gridVisible = false : Pixel.pixelSettings.gridVisible = true;
-    buttonToggleGridVisibility.textContent = Pixel.pixelSettings.gridVisible === true ? "Grid Visible" : "Grid Hidden";
-    Pixel.drawAllElements();
+function toggleGridVisibility() { //attached to buttonToggleGridVisibility to toggle grid visibility
+    Pixel.pixelSettings.gridVisible = !Pixel.pixelSettings.gridVisible; //switch boolean value of grid visibility
+    buttonToggleGridVisibility.textContent = Pixel.pixelSettings.gridVisible ? "Grid Visible" : "Grid Hidden";
+    Pixel.drawAllElements(); //update canvas to reflect changes in grid visibility
 }
 
-function restoreImageGridLogic(callbackFunction, displayImageGrid, resetToPreviousValue) {
+function restoreImageGridLogic(callbackFunction, displayImageGrid, resetToPreviousValue) { //function to run callback and then restore initial grid visibility after callback if desired
     const previousValue = Pixel.pixelSettings.gridVisible;
 
-    setEnableImageGrid(displayImageGrid);
-    callbackFunction();
+    setEnableImageGrid(displayImageGrid); //set grid visibility based on parameter passed
+    callbackFunction(); //run the passed callback function
 
-    if (resetToPreviousValue) {
+    if (resetToPreviousValue) { //if parameter passed is TRUE, restore initial grid visibility
         setEnableImageGrid(previousValue);
     }
 }
 
-function saveCanvasImage() {
+function saveCanvasImage() { //attached to buttonSaveCanvasImage to save canvas image
     const image = canvas.toDataURL("image/png");
     const link = document.createElement("a");
 
     link.href = image;
-    link.download = "pixel-art.png";
-    link.click();
+    link.download = "pixel-art.png"; //name given to the download
+    link.click(); //auto click the link to download the image file directly
 }
 
-function loadBackgroundImage() {
+function loadBackgroundImage() { //attached to fileLoadBackgroundImage to load background image
     const imageReader = new FileReader();
 
-    imageReader.addEventListener("load", () => {
+    imageReader.addEventListener("load", () => { //wait for image to be chosen from file select popup window before proceeding
         const image = new Image();
 
-        image.addEventListener("load", () => {
+        image.addEventListener("load", () => { //wait for image to load into page before proceeding
             Pixel.pixelSettings.backgroundImage = image;
-            resizeCanvasToImage();
-            determinePossibleGridDimensions();
-            setGridDimensions();
+            resizeCanvasToImage(); //resize image and canvas to fit with currently set grid dimensions size
+            determinePossibleGridDimensions(); //get possible grid dimensions for new background image
+            setGridDimensions(); //update grid dimensions and reinitialize all pixels to match new grid dimensions
 
             buttonGeneratePixelArt.disabled = false;
             buttonClearBackgroundImage.disabled = false;
-            Pixel.drawAllElements();
+            Pixel.drawAllElements(); //update canvas to reflect changes in background image and canvas size
         });
         image.src = imageReader.result;
     });
@@ -201,9 +194,9 @@ function loadBackgroundImage() {
 
 //AUTOMATICALLY COLORIZE IMAGE BASED ON IMAGE BACKGROUND===========================================================================================================
 
-function determineRevisedImageSize() {
+function determineRevisedImageSize() { //computes new image width and height based on background image and canvas size constraints
     const backgroundImage = Pixel.pixelSettings.backgroundImage;
-    const imageRatio = backgroundImage.width / backgroundImage.height;
+    const imageRatio = backgroundImage.width / backgroundImage.height; //determine image ratio for resizing image width and/or height
     let resizedWidth, resizedHeight;
     
     if (imageRatio > 1) { //width is greater than height
@@ -212,75 +205,78 @@ function determineRevisedImageSize() {
     } else if (imageRatio < 1) { //height is greater than width
         resizedHeight = Math.min(backgroundImage.height, 600);
         resizedWidth = resizedHeight * imageRatio;
-    } else {
+    } else { //image is square
         resizedWidth = Math.min(backgroundImage.width, 600);
         resizedHeight = resizedWidth;
     }
-    return {width: resizedWidth, height: resizedHeight};
+    return {width: resizedWidth, height: resizedHeight}; //return and pass new image width and height to modifyImageSize function
 }
 
-function modifyImageSize(width, height) {
+function modifyImageSize(width, height) { //modifies image width and height based on grid dimensions to make square pixels work properly in the image (i.e. no cropping/pixel overflow)
     const gridSize = Pixel.pixelSettings.gridDimensions;
-    const widthAddition = width % gridSize;
-    const heightAddition = height % gridSize;
+    const widthAddition = width % gridSize; //how many pixels to subtract from width to make multiple of grid dimensions
+    const heightAddition = height % gridSize; //how many pixels to subtract from height to make multiple of grid dimensions
 
-    return {width: width - widthAddition, height: height - heightAddition};
+    return {width: width - widthAddition, height: height - heightAddition}; //return and pass new image width and height to resizeCanvasToImage function
 }
 
-function resizeCanvasToImage() {
+function resizeCanvasToImage() { //resizes canvas to fit with currently set grid dimensions and background image dimensions
     const rawMeasurements = determineRevisedImageSize();
     const finalMeasurements = modifyImageSize(rawMeasurements.width, rawMeasurements.height);
 
-    canvas.width = finalMeasurements.width;
-    canvas.height = finalMeasurements.height;
-    Pixel.drawAllElements();
+    canvas.width = finalMeasurements.width; //set proper canvas width compatible with grid dimensions
+    canvas.height = finalMeasurements.height; //set proper canvas height compatible with grid dimensions
+    Pixel.drawAllElements(); //update canvas to reflect changes in canvas size
 }
 
-function autoColorizeImage() {
+function autoColorizeImage() { //attached to buttonAutoColorizeImage to automatically colorize image based on image background and grid dimensions size
     if (Pixel.pixelSettings.backgroundImage) {
-        const imageRGBSet = getFilteredPixelsSet();
+        const imageRGBSet = getFilteredPixelsSet(); //getImageDate from background image and filter out pixels that are not needed for coloring
 
-        assignColorToPixel(imageRGBSet);
-        Pixel.setDrawPixelColors(true);
-        Pixel.drawAllElements();
+        assignColorToPixel(imageRGBSet); //colorize each grid element on canvas with color within corresponding location in imageRGBSet
+        Pixel.setDrawPixelColors(true); //enable drawing of pixel colors to show the newly colored pixels on top of the background image
+        Pixel.drawAllElements(); //update canvas to reflect changes in pixel colors
     }
 }
 
-function assignColorToPixel(set) {
+function assignColorToPixel(set) { //iterates through pixel set and assigns color to each element on canvas (i.e. each pixel)
     const setIterator = set.values();
-    let currentValue = setIterator.next().value;
+    let currentValue = setIterator.next().value; //stup the iterator function for the set
 
     for (let element of Pixel.pixelsSet) {
-        element.color = `rgb(${currentValue[0]}, ${currentValue[1]}, ${currentValue[2]})`;
-        currentValue = setIterator.next().value;
+        element.color = `rgb(${currentValue[0]}, ${currentValue[1]}, ${currentValue[2]})`; //assign the RGB value to each pixel in the set
+        currentValue = setIterator.next().value; //iterate through the set to obtain the next RGB value
     }
 }
 
-function getFilteredPixelsSet() {
+function getFilteredPixelsSet() { //use getImageData and filter out all pixels not needed to fill in canvas grid elements (i.e. pixels)
     const imageRGBSet = new Set();
     const pixelSize = Pixel.pixelSettings.gridDimensions;
-    const rawImageData = context.getImageData(pixelSize / 2, pixelSize / 2, canvas.width, canvas.height);
+    const rawImageData = context.getImageData(pixelSize / 2, pixelSize / 2, canvas.width, canvas.height); //get image data from background image (start sampling from center of first pixel)
 
-    for (let x = 0; x < canvas.width; x += pixelSize) {
+    for (let x = 0; x < canvas.width; x += pixelSize) { //iterate through each pixel in x and y directions to filter out pixels not needed and add those needed to imageRGBSet
         for (let y = 0; y < canvas.height; y += pixelSize) {
             const index = (y * canvas.width + x) * 4;
-            imageRGBSet.add([rawImageData.data[index], rawImageData.data[index + 1], rawImageData.data[index + 2]]);
+            imageRGBSet.add([rawImageData.data[index], rawImageData.data[index + 1], rawImageData.data[index + 2]]); //add only needed pixels and skip all others
         }
     }
-    return imageRGBSet;
+    return imageRGBSet; //return imageRGBSet to autoColorizeImage function
 }
 
 //EVENT LISTENERS============================================================================================================================================================
 
-document.addEventListener("DOMContentLoaded", runApplicationWithInitialSettings);
-sliderGridDimensions.addEventListener("click", handleSliderClickEvent);
+document.addEventListener("DOMContentLoaded", runApplicationWithInitialSettings); //run application with initial settings to setup
+document.addEventListener("click", () => Pixel.drawAllElements()) //fixes GUI issue with canvas grid not being synced to current image size/etc.
 
-buttonToggleGridVisibility.addEventListener("click", toggleGridVisibility);
-buttonSaveCanvasImage.addEventListener("click", saveCanvasImage);
-buttonClearBackgroundImage.addEventListener("click", setBackGroundImageToBlank);
-buttonGeneratePixelArt.addEventListener("click", () => restoreImageGridLogic(autoColorizeImage, false, true));
+//both slider event listeners are necessary to set up grid dimensions and resizes canvas dynamically without GUI errors/etc.
+sliderGridDimensions.addEventListener("click", handleSliderClickEvent); //sets up grid dimensions and resizes canvas whenever slider is clicked
+sliderGridDimensions.addEventListener("input", () => restoreImageGridLogic(setGridDimensions, true, false)); //sets up grid dimensions and refreshes canvas whenever slider value changes
 
-sliderGridDimensions.addEventListener("input", () => restoreImageGridLogic(setGridDimensions, true, false));
-fileLoadBackgroundImage.addEventListener("change", loadBackgroundImage);
+fileLoadBackgroundImage.addEventListener("change", loadBackgroundImage); //load background image when file is chosen
+
+buttonToggleGridVisibility.addEventListener("click", toggleGridVisibility); //toggle grid visibility when button clicked
+buttonSaveCanvasImage.addEventListener("click", saveCanvasImage); //save image when button clicked
+buttonClearBackgroundImage.addEventListener("click", setBackGroundImageToBlank); //clear background image when button clicked
+buttonGeneratePixelArt.addEventListener("click", () => restoreImageGridLogic(autoColorizeImage, false, true)); //colorize image when button clicked
 
 //==============================================================================================================================================================================
