@@ -1,0 +1,68 @@
+body { /*main body*/
+    background-color: lightblue;
+
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size:medium;
+    text-align: center;
+}
+
+body h2 {
+    margin: 20px 0px 10px 0px;
+}
+
+.button, input::file-selector-button {
+    background-color: darkgreen;
+    color: white;
+    cursor: pointer;
+
+    border: solid;
+    border-color:black;
+    border-width:thin;
+    border-radius:20px;
+    
+    padding: 16px 32px;
+    margin: 4px 2px;
+
+    font-size: medium;
+    font-weight: bold;
+}
+
+.button:active, input::file-selector-button:active {
+    background-color: rgb(0, 68, 0);
+}
+
+.button:hover, input::file-selector-button:hover {
+    border-width: 3px;
+}
+
+.button:disabled {
+    background-color: lightslategrey;
+    border-width: 1px;
+}
+
+.container {
+    margin: 10px 10px 10px 10px
+}
+
+#outerContentsContainer { /*container for the pixel art generator*/
+    display: flex;
+    position: absolute;
+    flex-direction: column;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+}
+
+#sliderGridDimensions { /*slider for the grid dimensions*/
+    cursor: pointer;
+    margin: 0 auto;
+}
+
+#innerControlsContainer { /*container for the controls*/
+    display: flex;
+    width: 600px;
+}
+
+#fileLoadBackgroundImage { /*input for loading an image*/
+    width: 320px
+}

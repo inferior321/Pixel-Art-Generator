@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Art Generator</title>
+</head>
+
+<body>
+    <h2>Pixel Art Generator</h2>
+    
+    <div id="outerContentsContainer">
+        <div class="container" id="innerButtonsContainer">
+            <button class="button" id="buttonToggleGridVisibility" title="Toggle Grid Visibility">Grid Visible</button>
+            <button disabled class="button" id="buttonClearBackgroundImage" title="Clear Background Image">Clear Background</button>
+            <button disabled class="button" id="buttonGeneratePixelArt" title="Generate Pixel Art From Image">Create Pixel Art</button>
+        </div>
+
+        <div class="container" id="innerControlsContainer">
+            <input id="sliderGridDimensions" type="range" min="5" max="120" step="1" value="10">
+            <input type="file" accept="image/*" id="fileLoadBackgroundImage" title="Load Background Image">
+        </div>
+
+        <div class="container" id="innerCanvasContainer">
+            <canvas id="canvasPixelArtGenerator" width="600" height="600"></canvas>
+        </div>
+
+        <button class="button" id="buttonSaveCanvasImage">Save Image</button>
+
+    </div>
+
+    <link rel="stylesheet" href="style.css">
+    <script src="pixel-art-generator.js"></script>
+</body>
+</html>
