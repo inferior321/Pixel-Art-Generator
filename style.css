@@ -6,13 +6,15 @@ body { /*main body*/
     text-align: center;
 }
 
-body h2 {
+body h2 { /*title*/
+    color: black;
     margin: 20px 0px 10px 0px;
 }
 
-.button, input::file-selector-button {
+.button, input::file-selector-button { /*buttons*/
     background-color: darkgreen;
     color: white;
+
     cursor: pointer;
 
     border: solid;
@@ -27,20 +29,23 @@ body h2 {
     font-weight: bold;
 }
 
-.button:active, input::file-selector-button:active {
+.button:active, input::file-selector-button:active { /*active effect for buttons*/
     background-color: rgb(0, 68, 0);
 }
 
-.button:hover, input::file-selector-button:hover {
+.button:hover, input::file-selector-button:hover { /*hover effect for buttons*/
     border-width: 3px;
 }
 
-.button:disabled {
+.button:disabled { /*disabled effect for buttons*/
     background-color: lightslategrey;
+
     border-width: 1px;
+
+    cursor: not-allowed;
 }
 
-.container {
+.container { /*container class for the pixel art generator*/    
     margin: 10px 10px 10px 10px
 }
 
@@ -48,21 +53,54 @@ body h2 {
     display: flex;
     position: absolute;
     flex-direction: column;
-    width: 100%;
     justify-content: center;
     align-items: center;
+
+    width: 100%;
 }
 
 #sliderGridDimensions { /*slider for the grid dimensions*/
     cursor: pointer;
-    margin: 0 auto;
 }
 
 #innerControlsContainer { /*container for the controls*/
     display: flex;
-    width: 600px;
+    justify-content: center;
+    align-items: center;
 }
 
 #fileLoadBackgroundImage { /*input for loading an image*/
-    width: 320px
+    width: 245px;
+}
+
+#colorPickerPixelColor { /*color picker for the pixel color*/
+    height:50px;
+    width: 50px;
+
+    cursor: pointer;
+
+    border: solid;
+    border-color:black;
+    border-width:thin;
+    border-radius: 10px;
+}
+
+#colorPickerPixelColor:hover { /*hover effect for color picker*/
+    border-width: 3px;
+}
+
+#colorPickerPixelColor:active { /*active effect for color picker*/
+    border-width: 5px;
+}
+
+#colorPickerPixelColor:disabled { /*disabled effect for color picker*/
+    opacity: 0.5;
+}
+
+#colorPickerPixelColor, #sliderGridDimensions, #fileLoadBackgroundImage { /*set margins for elements in bottom controls container*/
+    margin: 0px 10px 0px 10px;
+}
+
+#colorPickerPixelColor:disabled, #sliderGridDimensions:disabled { /*set disabled properties for elements in bottom controls container*/
+    cursor: not-allowed;
 }

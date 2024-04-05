@@ -2,8 +2,10 @@
 
 const canvas = document.getElementById("canvasPixelArtGenerator");
 const context = canvas.getContext("2d");
+const clickLocation = {x:null, y: null}; //object literal to store x and y coordinates of mouse click within canvas
 
 const sliderGridDimensions = document.getElementById("sliderGridDimensions"); //slider used to set the size of the grid
+const inputColorPicker = document.getElementById("colorPickerPixelColor"); //color picker used to set the color of individual pixels on canvas
 const fileLoadBackgroundImage = document.getElementById("fileLoadBackgroundImage"); //file input used to load a background image
 
 const buttonToggleGridVisibility = document.getElementById("buttonToggleGridVisibility");
@@ -22,6 +24,7 @@ class Pixel { //class used to create individual pixels for the pixel art grid
         gridVisible: true,
         backgroundImage: null,
         drawPixelColors: false, //draw pixel colors or leave blank
+        pixelColor: "#006400", //pixel color used to paint individual pixels on canvas
     }
     static pixelsSet = new Set(); //all pixels are stored in this set
 
@@ -69,11 +72,18 @@ class Pixel { //class used to create individual pixels for the pixel art grid
     static setDrawPixelColors(booleanValue) { //enable or disable the drawing of the fillColor of pixels (i.e the pixel colors)
         this.pixelSettings.drawPixelColors = booleanValue;
     };
+    static determineClickedPixel() { //determine which pixel from the set was clicked and return it
+        for (let element of this.pixelsSet) {
+            if (element.determineIfClicked(clickLocation.x, clickLocation.y)) { //if pixel determines that it was clicked, return it
+                return element;
+            };
+        };
+    }
 
     initializePixel() { //initializes a single pixel and adds it to the set
         this.constructor.pixelsSet.add(this);
     };
-    draw() { //draws a single pixel
+    draw() { //draws a single pixel on canvas
         if (this.constructor.pixelSettings.drawPixelColors) { //only draw if drawPixelColors is enabled
             context.fillStyle = this.color;
             context.fillRect(this.x, this.y, this.width, this.height);
@@ -83,6 +93,13 @@ class Pixel { //class used to create individual pixels for the pixel art grid
             context.lineWidth = 1;
             context.strokeRect(this.x, this.y, this.width, this.height);
         };
+    };
+    getBoundingBox() { //returns the bounding box of the pixel
+        return {xMin: this.x, xMax: this.x + this.width, yMin: this.y, yMax: this.y + this.height};
+    };
+    determineIfClicked(x,y) { //return boolean value determining if the pixel was clicked
+        const boundingBox = this.getBoundingBox();
+        return (x > boundingBox.xMin && x < boundingBox.xMax && y > boundingBox.yMin && y < boundingBox.yMax);
     };
 }
 
@@ -99,12 +116,49 @@ function determinePossibleGridDimensions() { //determines the possible grid dime
 
 //EVENT HANDLER FUNCTIONS====================================================================================================================================
 
+//CANVAS EVENT HANDLERS=======================================================================================================================================
+
+function handleCanvasClickEvent(event) { //attached to canvas to handle click events
+    firstPixelColor = Pixel.pixelsSet.values().next().value.color; //check whether first pixel has color value before determining the clicked pixel
+
+    if (Pixel.pixelSettings.backgroundImage && firstPixelColor) { //perform color check because if no color is set, there is no reason to draw pixel/copy pixel data
+        determineCanvasClickLocation(event);
+        const clickedPixel = Pixel.determineClickedPixel(); //constant for the clicked pixel
+
+        if (event.button === 0 && clickedPixel) { //left click canvas event to paint pixel with active color
+            paintPixelSelectedColor(clickedPixel);
+        } else if (event.button === 2 && clickedPixel) { //right click canvas event to assign clicked pixel color to color picker
+            convertRGBToHexColor(clickedPixel.color);
+        }
+    }
+}
+
+function paintPixelSelectedColor(clickedPixel) { //set the color of the clicked pixel to current color in color picker
+    clickedPixel.color = inputColorPicker.value; 
+}
+
+function convertRGBToHexColor(rgbColor) { //function to convert image rgb color to hex color and assign to colorPicker
+    let tempArray;
+
+    tempArray = rgbColor.replace("rgb(","").replace(")","").split(","); //remove rgb string and split into array
+    tempArray = tempArray.map(element => Number(element).toString(16).padStart(2, "0")); //convert array elements to hex
+    inputColorPicker.value = "#" + tempArray.join(""); //set color picker value to hex color
+}
+
+function determineCanvasClickLocation(event) { //determine the x and y coordinates of the clicked pixel in relation to the canvas position
+    const canvasBounds = canvas.getBoundingClientRect();
+
+    clickLocation.x = event.clientX - canvasBounds.left; 
+    clickLocation.y = event.clientY - canvasBounds.top; //set x and y coordinates of clicked pixel global object
+}
+
 //DOM EVENT HANDLERS==============================================================================================================================================================
 
 function runApplicationWithInitialSettings() { //runs the application with initial settings after DOM is loaded
     determinePossibleGridDimensions(); //get possible grid dimensions
     setGridDimensions();
-    setBackGroundImageToBlank(); //sets background image to blank and updates canvas
+    setBackGroundImageToBlank(); //clear the background image and update canvas (also disables the slider)
+    inputColorPicker.value = Pixel.pixelSettings.pixelColor; //set the initial value of the color picker to default green
 }
 
 //HELPER FUNCTIONS FOR EVENT LISTENERS========================================================================================================================
@@ -126,8 +180,15 @@ function setBackGroundImageToBlank() { //attached to buttonClearBackgroundImage 
 
     Pixel.setDrawPixelColors(false); //disable drawing of pixel colors and hide existing drawn pixels
     Pixel.drawAllElements(); //update canvas to reflect changes in background image
-    buttonGeneratePixelArt.disabled = true;
-    buttonClearBackgroundImage.disabled = true;
+    setEnablePageElements(true, true, true, true, true); //setup page elements after background image has been cleared
+}
+
+function setEnablePageElements(buttonGenerate, buttonClearBG, buttonSave, slider, colorPicker) { //configure page elements after performing various actions in page (generic function)
+    buttonGeneratePixelArt.disabled = buttonGenerate;
+    buttonClearBackgroundImage.disabled = buttonClearBG;
+    buttonSaveCanvasImage.disabled = buttonSave;
+    sliderGridDimensions.disabled = slider;
+    inputColorPicker.disabled = colorPicker;
 }
 
 //CLICK EVENT FUNCTIONS=======================================================================================================================================
@@ -183,9 +244,8 @@ function loadBackgroundImage() { //attached to fileLoadBackgroundImage to load b
             determinePossibleGridDimensions(); //get possible grid dimensions for new background image
             setGridDimensions(); //update grid dimensions and reinitialize all pixels to match new grid dimensions
 
-            buttonGeneratePixelArt.disabled = false;
-            buttonClearBackgroundImage.disabled = false;
             Pixel.drawAllElements(); //update canvas to reflect changes in background image and canvas size
+            setEnablePageElements(false, false, false, false, true); //setup page elements after background image has been loaded
         });
         image.src = imageReader.result;
     });
@@ -236,6 +296,7 @@ function autoColorizeImage() { //attached to buttonAutoColorizeImage to automati
         assignColorToPixel(imageRGBSet); //colorize each grid element on canvas with color within corresponding location in imageRGBSet
         Pixel.setDrawPixelColors(true); //enable drawing of pixel colors to show the newly colored pixels on top of the background image
         Pixel.drawAllElements(); //update canvas to reflect changes in pixel colors
+        inputColorPicker.disabled = false;
     }
 }
 
@@ -267,6 +328,9 @@ function getFilteredPixelsSet() { //use getImageData and filter out all pixels n
 
 document.addEventListener("DOMContentLoaded", runApplicationWithInitialSettings); //run application with initial settings to setup
 document.addEventListener("click", () => Pixel.drawAllElements()) //fixes GUI issue with canvas grid not being synced to current image size/etc.
+window.addEventListener("contextmenu", event => event.preventDefault()); //disable right click context menu
+
+canvas.addEventListener("mousedown", handleCanvasClickEvent); //handle mouse events on canvas (used for painting pixels after image is pixelated)
 
 //both slider event listeners are necessary to set up grid dimensions and resizes canvas dynamically without GUI errors/etc.
 sliderGridDimensions.addEventListener("click", handleSliderClickEvent); //sets up grid dimensions and resizes canvas whenever slider is clicked
