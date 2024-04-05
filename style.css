@@ -11,6 +11,10 @@ body h2 { /*title*/
     margin: 20px 0px 10px 0px;
 }
 
+body p {
+    margin-bottom: 20px;
+}
+
 .button, input::file-selector-button { /*buttons*/
     background-color: darkgreen;
     color: white;
