@@ -125,16 +125,28 @@ function handleCanvasClickEvent(event) { //attached to canvas to handle click ev
         determineCanvasClickLocation(event);
         const clickedPixel = Pixel.determineClickedPixel(); //constant for the clicked pixel
 
-        if (event.button === 0 && clickedPixel) { //left click canvas event to paint pixel with active color
+        if (!clickedPixel) { //return if no pixel was clicked
+            return;
+        }
+
+        if (event.button === 0) { //left click canvas event to paint pixel with active color
             paintPixelSelectedColor(clickedPixel);
-        } else if (event.button === 2 && clickedPixel) { //right click canvas event to assign clicked pixel color to color picker
-            convertRGBToHexColor(clickedPixel.color);
+        } else if (event.button === 2) { //right click canvas event to assign clicked pixel color to color picker
+            assignClickedColorToColorPicker(clickedPixel.color); //assigns the clicked pixel color to the color picker (differentiates between rgb and hex values)
         }
     }
 }
 
 function paintPixelSelectedColor(clickedPixel) { //set the color of the clicked pixel to current color in color picker
     clickedPixel.color = inputColorPicker.value; 
+}
+
+function assignClickedColorToColorPicker(pixelColor) { //assigns the clicked pixel color to the color picker (differentiates between rgb and hex values)
+    if (pixelColor.includes("rgb")) { //if the pixel color is in rgb format
+        convertRGBToHexColor(pixelColor);
+    } else { //if the pixel color is already in hex format
+        inputColorPicker.value = pixelColor;
+    }
 }
 
 function convertRGBToHexColor(rgbColor) { //function to convert image rgb color to hex color and assign to colorPicker
