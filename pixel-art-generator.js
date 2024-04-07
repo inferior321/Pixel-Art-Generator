@@ -1,6 +1,6 @@
 //GLOBAL VARIABLES============================================================================================================================================================
 
-const canvas = document.getElementById("canvasPixelArtGenerator");
+const canvas = document.getElementById("canvasPixelArtGenerator"); //canvas used to draw pixel art
 const context = canvas.getContext("2d");
 const clickLocation = {x:null, y: null}; //object literal to store x and y coordinates of mouse click within canvas
 
@@ -27,6 +27,7 @@ class Pixel { //class used to create individual pixels for the pixel art grid
         pixelColor: "#006400", //pixel color used to paint individual pixels on canvas
     }
     static pixelsSet = new Set(); //all pixels are stored in this set
+    static clickedPixelHistory = []; //array used to store history of all clicked (i.e. painted) pixels (used to undo pixel painting on canvas)
 
     constructor(x, y, width, height) {
         this.x = x;
@@ -35,7 +36,18 @@ class Pixel { //class used to create individual pixels for the pixel art grid
         this.height = height;
         this.initializePixel();
     };
+
+    static undoPixelColorChangeOperation() { //function to undo pixel color change (if possible)
+        if (this.clickedPixelHistory.length) { //only undo if there are pixels to undo
+            const lastClickedPixel = this.clickedPixelHistory.pop();
     
+            lastClickedPixel.color = lastClickedPixel.previousColor; //restore previous color to pixel
+            this.drawAllElements(); //redraw canvas to reflect color change
+        }
+    };
+    static resetClickedPixelsHistory() { //resets the clickedPixelHistory array (empties all contents of array)
+        this.clickedPixelHistory = [];
+    };
     static setEnableAllPixelOutlines(booleanValue) { //enable or disable the outlines of all pixels (i.e the grid)
         this.pixelSettings.gridVisible = booleanValue;
     };
@@ -78,7 +90,7 @@ class Pixel { //class used to create individual pixels for the pixel art grid
                 return element;
             };
         };
-    }
+    };
 
     initializePixel() { //initializes a single pixel and adds it to the set
         this.constructor.pixelsSet.add(this);
@@ -130,7 +142,9 @@ function handleCanvasClickEvent(event) { //attached to canvas to handle click ev
         }
 
         if (event.button === 0) { //left click canvas event to paint pixel with active color
+            clickedPixel.previousColor = clickedPixel.color; //store previous color before assigning new color (necessary for undo functionality)
             paintPixelSelectedColor(clickedPixel);
+            Pixel.clickedPixelHistory.push(clickedPixel); //push clicked pixel to array to keep track of history (undo functionality)
         } else if (event.button === 2) { //right click canvas event to assign clicked pixel color to color picker
             assignClickedColorToColorPicker(clickedPixel.color); //assigns the clicked pixel color to the color picker (differentiates between rgb and hex values)
         }
@@ -190,6 +204,7 @@ function setBackGroundImageToBlank() { //attached to buttonClearBackgroundImage 
     fileLoadBackgroundImage.value = "";
     Pixel.pixelSettings.backgroundImage = null;
 
+    Pixel.resetClickedPixelsHistory(); //resets the clickedPixelHistory array (no longer needed after clearing background image)
     Pixel.setDrawPixelColors(false); //disable drawing of pixel colors and hide existing drawn pixels
     Pixel.drawAllElements(); //update canvas to reflect changes in background image
     setEnablePageElements(true, true, true, true, true); //setup page elements after background image has been cleared
@@ -208,6 +223,16 @@ function setEnablePageElements(buttonGenerate, buttonClearBG, buttonSave, slider
 function handleSliderClickEvent() { //attached to sliderGridDimensions to update image grid dimensions and canvas size
     Pixel.pixelSettings.backgroundImage ? resizeCanvasToImage() : Pixel.drawAllElements(); //if image is loaded, resize canvas to image (else redraw canvas)
     setGridDimensions(); //update grid dimensions and reinitialize all pixels to match new grid dimensions
+
+    inputColorPicker.disabled = true; //disable color picker slider after grid dimensions are set (unable to paint pixels until create button is pressed)
+}
+
+//KEYBOARD KEYUP EVENT FUNCTIONS===========================================================================================================================
+
+function handleKeyUpEvent(event) { //attached to document to handle keyup events (for undo functionality)
+    if (event.ctrlKey && event.key === "z") {
+        Pixel.undoPixelColorChangeOperation(); //undo pixel color change
+    }
 }
 
 //BUTTON EVENT FUNCTIONS=====================================================================================================================================
@@ -216,6 +241,8 @@ function setGridDimensions() { //attached to sliderGridDimensions to update imag
     Pixel.pixelSettings.gridDimensions = Number(sliderGridDimensions.value);
     Pixel.initializeAllPixels(); //reinitialize all pixels to match new grid dimensions
     Pixel.setDrawPixelColors(false); //disable drawing of pixel colors and hide existing drawn pixels
+
+    inputColorPicker.disabled = true; //disable color picker slider after grid dimensions are set (unable to paint pixels until create button is pressed)
 }
 
 function toggleGridVisibility() { //attached to buttonToggleGridVisibility to toggle grid visibility
@@ -256,6 +283,7 @@ function loadBackgroundImage() { //attached to fileLoadBackgroundImage to load b
             determinePossibleGridDimensions(); //get possible grid dimensions for new background image
             setGridDimensions(); //update grid dimensions and reinitialize all pixels to match new grid dimensions
 
+            Pixel.resetClickedPixelsHistory(); //reset the clickedPixelHistory array (contents not needed after loading new background image)
             Pixel.drawAllElements(); //update canvas to reflect changes in background image and canvas size
             setEnablePageElements(false, false, false, false, true); //setup page elements after background image has been loaded
         });
@@ -302,10 +330,11 @@ function resizeCanvasToImage() { //resizes canvas to fit with currently set grid
 }
 
 function autoColorizeImage() { //attached to buttonAutoColorizeImage to automatically colorize image based on image background and grid dimensions size
-    if (Pixel.pixelSettings.backgroundImage) {
+    if (Pixel.pixelSettings.backgroundImage && !Pixel.pixelSettings.drawPixelColors) { //only run if image is loaded and pixel colors are not enabled (i.e. image is not already processed)
         const imageRGBSet = getFilteredPixelsSet(); //getImageDate from background image and filter out pixels that are not needed for coloring
 
         assignColorToPixel(imageRGBSet); //colorize each grid element on canvas with color within corresponding location in imageRGBSet
+        Pixel.resetClickedPixelsHistory(); //resets the clickedPixelHistory array (no longer needed after reprocessing background image)
         Pixel.setDrawPixelColors(true); //enable drawing of pixel colors to show the newly colored pixels on top of the background image
         Pixel.drawAllElements(); //update canvas to reflect changes in pixel colors
         inputColorPicker.disabled = false;
@@ -341,6 +370,7 @@ function getFilteredPixelsSet() { //use getImageData and filter out all pixels n
 document.addEventListener("DOMContentLoaded", runApplicationWithInitialSettings); //run application with initial settings to setup
 document.addEventListener("click", () => Pixel.drawAllElements()) //fixes GUI issue with canvas grid not being synced to current image size/etc.
 window.addEventListener("contextmenu", event => event.preventDefault()); //disable right click context menu
+document.addEventListener("keyup", handleKeyUpEvent); //attached to document to handle keyup events (for undo functionality)
 
 canvas.addEventListener("mousedown", handleCanvasClickEvent); //handle mouse events on canvas (used for painting pixels after image is pixelated)
 
